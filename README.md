@@ -1,5 +1,7 @@
 # captrs
 
+A fork of the [captrs crate](https://crates.io/crates/captrs) by [bryal](https://github.com/bryal) using the updated [dxgcap2 crate](https://crates.io/crates/dxgcap2)
+
 Library for cross-platform screen capture in Rust. Uses
 [dxgcap](https://github.com/bryal/dxgcap-rs) for capture on Windows
 via the Desktop Duplication API, and
