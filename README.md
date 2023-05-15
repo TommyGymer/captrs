@@ -1,4 +1,4 @@
-# captrs
+# captrs2
 
 A fork of the [captrs crate](https://crates.io/crates/captrs) by [bryal](https://github.com/bryal) using the updated [dxgcap2 crate](https://crates.io/crates/dxgcap2)
 
