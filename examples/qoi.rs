@@ -11,8 +11,8 @@ fn main() {
 
     let (w, h) = capturer.geometry();
 
-    let f1 = capturer.capture_frame_components().unwrap();
-    let f2 = capturer.capture_frame_components().unwrap();
+    let f1 = capturer.capture_frame_components_rgba().unwrap();
+    let f2 = capturer.capture_frame_components_rgba().unwrap();
 
     let p1 = Path::new("./frame1.qoi");
     let p2 = Path::new("./frame2.qoi");

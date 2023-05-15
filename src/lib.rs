@@ -11,6 +11,7 @@ use std::time::Duration;
 /// Color represented by additive channels: Blue (b), Green (g), Red (r), and Alpha (a)
 #[cfg(windows)]
 pub type Bgr8 = dxgcap2::BGRA8;
+pub type Rgb8 = dxgcap2::RGBA8;
 /// Color represented by additive channels: Blue (b), Green (g), and Red (r).
 ///
 /// A fourth field of padding makes this struct 4 bytes.
@@ -42,7 +43,8 @@ pub struct Capturer {
     dxgi_manager: dxgcap2::DXGIManager,
     width: usize,
     height: usize,
-    image: Option<Vec<Bgr8>>,
+    bgr_image: Option<Vec<Bgr8>>,
+    rgb_image: Option<Vec<Rgb8>>,
 }
 
 /// A screen capturer.
@@ -79,7 +81,8 @@ impl Capturer {
                         dxgi_manager: mgr,
                         width: 0,
                         height: 0,
-                        image: None,
+                        bgr_image: None,
+                        rgb_image: None,
                     }
                 })
             })
@@ -149,7 +152,7 @@ impl Capturer {
 
     /// Capture screen and return an owned `Vec` of the image color data in bgr format
     #[cfg(windows)]
-    pub fn capture_frame_components(&mut self) -> Result<Vec<u8>, CaptureError> {
+    pub fn capture_frame_components_bgra(&mut self) -> Result<Vec<u8>, CaptureError> {
         use dxgcap2::CaptureError::*;
 
         match self.dxgi_manager.capture_frame_components() {
@@ -166,14 +169,53 @@ impl Capturer {
         }
     }
 
+    /// Capture screen and return an owned `Vec` of the image color data in bgr format
+    #[cfg(windows)]
+    pub fn capture_frame_components_rgba(&mut self) -> Result<Vec<u8>, CaptureError> {
+        use dxgcap2::CaptureError::*;
+
+        match self.dxgi_manager.capture_frame_rgba_components() {
+            Ok((data, (w, h))) => {
+                self.width = w;
+                self.height = h;
+                Ok(data)
+            }
+            Err(AccessDenied) => Err(CaptureError::AccessDenied),
+            Err(AccessLost) => Err(CaptureError::AccessLost),
+            Err(RefreshFailure) => Err(CaptureError::RefreshFailure),
+            Err(Timeout) => Err(CaptureError::Timeout),
+            Err(Fail(e)) => Err(CaptureError::Fail(e.to_string())),
+        }
+    }
+
     /// Capture screen and store in `self` for later retreival
     #[cfg(windows)]
-    pub fn capture_store_frame(&mut self) -> Result<(), CaptureError> {
+    pub fn capture_store_frame_bgra(&mut self) -> Result<(), CaptureError> {
         use dxgcap2::CaptureError::*;
 
         match self.dxgi_manager.capture_frame() {
             Ok((data, (w, h))) => {
-                self.image = Some(data);
+                self.bgr_image = Some(data);
+                self.width = w;
+                self.height = h;
+                Ok(())
+            }
+            Err(AccessDenied) => Err(CaptureError::AccessDenied),
+            Err(AccessLost) => Err(CaptureError::AccessLost),
+            Err(RefreshFailure) => Err(CaptureError::RefreshFailure),
+            Err(Timeout) => Err(CaptureError::Timeout),
+            Err(Fail(e)) => Err(CaptureError::Fail(e.to_string())),
+        }
+    }
+
+    /// Capture screen and store in `self` for later retreival
+    #[cfg(windows)]
+    pub fn capture_store_frame_rgba(&mut self) -> Result<(), CaptureError> {
+        use dxgcap2::CaptureError::*;
+
+        match self.dxgi_manager.capture_frame_rgba() {
+            Ok((data, (w, h))) => {
+                self.rgb_image = Some(data);
                 self.width = w;
                 self.height = h;
                 Ok(())
@@ -215,8 +257,23 @@ impl Capturer {
 
     /// Get the last frame stored in `self` by `Self::capture_store_frame`,
     /// if one has ever been stored.
-    pub fn get_stored_frame(&self) -> Option<&[Bgr8]> {
-        self.image.as_ref().map(|img| img.as_slice())
+    #[cfg(windows)]
+    pub fn get_stored_frame_bgra(&self) -> Option<&[Bgr8]> {
+        self.bgr_image.as_deref()
+    }
+
+    /// Get the last frame stored in `self` by `Self::capture_store_frame`,
+    /// if one has ever been stored.
+    #[cfg(windows)]
+    pub fn get_stored_frame_rgba(&self) -> Option<&[Rgb8]> {
+        self.rgb_image.as_deref()
+    }
+
+    /// Get the last frame stored in `self` by `Self::capture_store_frame`,
+    /// if one has ever been stored.
+    #[cfg(not(windows))]
+    pub fn get_stored_frame_rgba(&self) -> Option<&[bgr8]> {
+        self.rgb.as_ref().map(|img| img.as_slice())
     }
 }
 
@@ -230,7 +287,7 @@ mod captrs_tests_windows {
 
         let (w, h) = capturer.geometry();
 
-        let frame = capturer.capture_frame_components().unwrap();
+        let frame = capturer.capture_frame_components_rgba().unwrap();
 
         // check that the capture is the correct size
         // should be width * height * $ (RGBA)
