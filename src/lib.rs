@@ -2,7 +2,7 @@
 //! and X11 (xlib, XGetImage) on *nix
 
 #[cfg(windows)]
-extern crate dxgcap;
+extern crate dxgcap2;
 #[cfg(not(windows))]
 extern crate x11cap;
 
@@ -10,7 +10,7 @@ use std::time::Duration;
 
 /// Color represented by additive channels: Blue (b), Green (g), Red (r), and Alpha (a)
 #[cfg(windows)]
-pub type Bgr8 = dxgcap::BGRA8;
+pub type Bgr8 = dxgcap2::BGRA8;
 /// Color represented by additive channels: Blue (b), Green (g), and Red (r).
 ///
 /// A fourth field of padding makes this struct 4 bytes.
@@ -39,7 +39,7 @@ pub enum CaptureError {
 /// screenshooting, recording, streaming, etc.
 #[cfg(windows)]
 pub struct Capturer {
-    dxgi_manager: dxgcap::DXGIManager,
+    dxgi_manager: dxgcap2::DXGIManager,
     width: usize,
     height: usize,
     image: Option<Vec<Bgr8>>,
@@ -73,7 +73,7 @@ impl Capturer {
                     integer overflow.",
             )
             .and_then(|timeout| {
-                dxgcap::DXGIManager::new(timeout).map(|mut mgr| {
+                dxgcap2::DXGIManager::new(timeout).map(|mut mgr| {
                     mgr.set_capture_source_index(capture_src);
                     Capturer {
                         dxgi_manager: mgr,
@@ -131,7 +131,7 @@ impl Capturer {
     /// `self.capture_frame` and `self.capture_store_frame(); self.get_stored_frame()`
     #[cfg(windows)]
     pub fn capture_frame(&mut self) -> Result<Vec<Bgr8>, CaptureError> {
-        use dxgcap::CaptureError::*;
+        use dxgcap2::CaptureError::*;
 
         match self.dxgi_manager.capture_frame() {
             Ok((data, (w, h))) => {
@@ -150,7 +150,7 @@ impl Capturer {
     /// Capture screen and return an owned `Vec` of the image color data in bgr format
     #[cfg(windows)]
     pub fn capture_frame_components(&mut self) -> Result<Vec<u8>, CaptureError> {
-        use dxgcap::CaptureError::*;
+        use dxgcap2::CaptureError::*;
 
         match self.dxgi_manager.capture_frame_components() {
             Ok((data, (w, h))) => {
@@ -169,7 +169,7 @@ impl Capturer {
     /// Capture screen and store in `self` for later retreival
     #[cfg(windows)]
     pub fn capture_store_frame(&mut self) -> Result<(), CaptureError> {
-        use dxgcap::CaptureError::*;
+        use dxgcap2::CaptureError::*;
 
         match self.dxgi_manager.capture_frame() {
             Ok((data, (w, h))) => {
